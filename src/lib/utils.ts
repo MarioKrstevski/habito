@@ -6,7 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 const indexCache = new Map<string, number>();
-
+export const isEmoji = (char: string) => {
+  if (!char) return false;
+  const codePoints = Array.from(char);
+  return (
+    codePoints.length === 1 && /\p{Extended_Pictographic}/u.test(char)
+  );
+};
 export function getCachedDateIndex(month?: number, day?: number) {
   // Default to today's date if nothing is passed
   const today = new Date();

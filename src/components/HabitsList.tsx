@@ -16,6 +16,16 @@ export function HabitsList() {
   );
   // console.log(habits, typeof habits, Array.isArray(habits));
   const filteredHabits = habits
+    // .filter(
+    //   (habit) =>
+    //     habit.yearlyProgress && habit.yearlyProgress.length > 0
+    // )
+    .filter((habit) => {
+      const habitStartDate = new Date(habit.startDate);
+      // console.log(habitStartDate);
+      // console.log(appDate);
+      return appDate && habitStartDate <= appDate;
+    })
     .filter((habit) => {
       const yearlyProgress = habit.yearlyProgress.find(
         (progress) => progress.year === appDate?.getFullYear()

@@ -38,8 +38,25 @@ export function DatePicker() {
         <Calendar
           mode="single"
           selected={appDate ?? undefined}
-          onSelect={(day) => {
-            setAppDate(day ?? null);
+          onSelect={(date) => {
+            console.log(date);
+            if (
+              date &&
+              date.toDateString() === new Date().toDateString()
+            ) {
+              const currentDate = new Date();
+              setAppDate(
+                new Date(
+                  currentDate.setHours(
+                    currentDate.getHours(),
+                    currentDate.getMinutes(),
+                    currentDate.getSeconds()
+                  )
+                )
+              );
+            } else {
+              setAppDate(date ?? null);
+            }
             setIsOpen(false);
           }}
           disabled={(date) =>

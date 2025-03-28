@@ -37,6 +37,7 @@ import {
   ParsedHabitYearlyProgress,
 } from "@/types/habits";
 import { useUser } from "@clerk/nextjs";
+import HabitIconPicker from "./HabitIconPicker";
 
 export default function CreateHabitModal() {
   const { user } = useUser();
@@ -46,7 +47,9 @@ export default function CreateHabitModal() {
     setHabits,
     setIsCreateHabitModalOpen,
   } = useAppState();
-  const [habitName, setHabitName] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState("");
   const [goal, setGoal] = useState(1);
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("ANY");
   const [type, setType] = useState<HabitType>("BUILD");
@@ -59,8 +62,8 @@ export default function CreateHabitModal() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!habitName) {
-      document.getElementById("habitName")?.focus();
+    if (!title) {
+      document.getElementById("title")?.focus();
       return;
     }
     console.log(startDate);
@@ -76,7 +79,7 @@ export default function CreateHabitModal() {
 
     // Handle save logic here
     console.log({
-      habitName,
+      title,
       goal,
       timeOfDay,
       repeat,
@@ -84,45 +87,11 @@ export default function CreateHabitModal() {
       reminders,
     });
 
-    // const hyp: ParsedHabitYearlyProgress[] = [
-    //   {
-    //     id: 1,
-
-    //     year: new Date().getFullYear(),
-    //     completions: Array.from({ length: 365 }, () =>
-    //       Math.random() < 0.5 ? "0" : "1"
-    //     ),
-    //     habitId: 1,
-    //     createdAt: new Date(),
-    //     updatedAt: new Date(),
-    //   },
-    // ];
-    // const habit: HabitWithParsedYearlyProgress = {
-    //   type: "BUILD",
-    //   icon: "🏃",
-    //   timeOfDay: "ANY" as TimeOfDay,
-    //   daysOfWeek: [],
-    //   overflow: false,
-    //   id: Math.floor(Math.random() * 1000) + 1,
-    //   title: habitName,
-    //   description: "",
-    //   frequency: repeat.toUpperCase() as Frequency,
-    //   metric: metric,
-    //   targetCount: goal,
-    //   startDate: startDate,
-    //   endDate: null,
-    //   isArchived: false,
-    //   userId: Number(user?.id),
-    //   createdAt: new Date(),
-    //   tags: [],
-    //   updatedAt: new Date(),
-    //   habitYearlyProgress: hyp,
-    // };
     const newHabit = await fetch("/api/habit", {
       method: "POST",
       body: JSON.stringify({
-        title: habitName,
-        description: "",
+        title: title,
+        description: description,
         frequency: repeat.toUpperCase() as Frequency,
         timeOfDay: timeOfDay,
         type: "BUILD",
@@ -156,19 +125,43 @@ export default function CreateHabitModal() {
         <div className="p-4">
           {/* Name & Icon */}
           <div className="flex flex-col gap-2">
-            <Label
-              htmlFor="habitName"
-              className="text-sm font-medium"
-            >
+            <Label htmlFor="title" className="text-sm font-medium">
               Habit Name
             </Label>
             <Input
               required
-              name="habitName"
-              id="habitName"
+              name="title"
+              id="title"
               className="w-full"
-              value={habitName}
-              onChange={(e) => setHabitName(e.target.value)}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          {/* Description */}
+          <div className="flex flex-col gap-2">
+            <Label
+              htmlFor="description"
+              className="text-sm font-medium"
+            >
+              Description
+            </Label>
+            <Input
+              required
+              name="description"
+              id="description"
+              className="w-full"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          {/* Icon */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="icon" className="text-sm font-medium">
+              Icon
+            </Label>
+            <HabitIconPicker
+              icon={icon}
+              onChange={(value) => setIcon(value)}
             />
           </div>
           {/* Goal & Frequency */}
