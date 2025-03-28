@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
+import {
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { HabitsProvider } from "@/providers/HabitsProvider";
+import { ClerkProvider } from "@clerk/nextjs";
+import React from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,12 +32,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <NuqsAdapter>
+            <HabitsProvider>
+              <SidebarProvider>
+                <AppSidebar />
+                <main className="flex w-full flex-1 relative">
+                  {/* <Sidebar /> */}
+                  <SidebarTrigger className="sticky  top-0 left-0 z-[10] border-r-1 size-9 cursor-pointer" />
+                  <React.Suspense fallback={<div>Loading...</div>}>
+                    <div className="w-full">{children}</div>
+                  </React.Suspense>
+                </main>
+              </SidebarProvider>
+            </HabitsProvider>
+          </NuqsAdapter>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
