@@ -38,6 +38,8 @@ import {
 } from "@/types/habits";
 import { useUser } from "@clerk/nextjs";
 import HabitIconPicker from "./HabitIconPicker";
+import { Switch } from "@/components/ui/switch";
+import DaysOfWeekPicker from "./DaysOfWeekPicker";
 
 export default function CreateHabitModal() {
   const { user } = useUser();
@@ -50,14 +52,21 @@ export default function CreateHabitModal() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("");
-  const [goal, setGoal] = useState(1);
+  const [frequency, setFrequency] = useState<Frequency>("DAILY");
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("ANY");
   const [type, setType] = useState<HabitType>("BUILD");
-  const [repeat, setRepeat] = useState<Frequency>("DAILY");
+  const [overflow, setOverflow] = useState(false);
 
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>([
+    0, 1, 2, 3, 4, 5, 6,
+  ]);
   const [metric, setMetric] = useState("times");
+  const [targetCount, setTargetCount] = useState(1);
   const [startDate, setStartDate] = useState<Date | null>(new Date());
-  const [reminders, setReminders] = useState("");
+
+  // tODO
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -80,11 +89,16 @@ export default function CreateHabitModal() {
     // Handle save logic here
     console.log({
       title,
-      goal,
+      description,
+      icon,
+      targetCount,
+      metric,
+      daysOfWeek,
       timeOfDay,
-      repeat,
+      type,
+      frequency,
+      overflow,
       startDate,
-      reminders,
     });
 
     const newHabit = await fetch("/api/habit", {
@@ -92,12 +106,14 @@ export default function CreateHabitModal() {
       body: JSON.stringify({
         title: title,
         description: description,
-        frequency: repeat.toUpperCase() as Frequency,
+        frequency: frequency.toUpperCase() as Frequency,
         timeOfDay: timeOfDay,
-        type: "BUILD",
-        targetCount: goal,
+        type: type,
+        targetCount: targetCount,
+        metric: metric,
         startDate: startDate,
         endDate: null,
+        overflow: overflow,
       }),
     }).then((res) => res.json());
     const newHabits = [...habits, newHabit];
@@ -114,6 +130,10 @@ export default function CreateHabitModal() {
     { label: "Morning", value: "MORNING" },
     { label: "Afternoon", value: "AFTERNOON" },
     { label: "Evening", value: "EVENING" },
+  ];
+  const habitTypeOptions = [
+    { label: "Build", value: "BUILD" },
+    { label: "Break", value: "BREAK" },
   ];
   return (
     <Modal
@@ -167,16 +187,18 @@ export default function CreateHabitModal() {
           {/* Goal & Frequency */}
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="goal">Goal</Label>
+              <Label htmlFor="targetCount">Goal</Label>
               <div className="flex gap-2">
                 <Input
                   required
-                  name="goal"
-                  id="goal"
+                  name="targetCount"
+                  id="targetCount"
                   type="number"
                   className="w-full max-w-[100px]"
-                  value={goal}
-                  onChange={(e) => setGoal(Number(e.target.value))}
+                  value={targetCount}
+                  onChange={(e) =>
+                    setTargetCount(Number(e.target.value))
+                  }
                 />
                 <SelectWithInput
                   value={metric}
@@ -189,9 +211,9 @@ export default function CreateHabitModal() {
                   ]}
                 />
                 <Select
-                  value={repeat}
+                  value={frequency}
                   onValueChange={(value) =>
-                    setRepeat(value as Frequency)
+                    setFrequency(value as Frequency)
                   }
                 >
                   <SelectTrigger className="w-[180px]">
@@ -283,8 +305,88 @@ export default function CreateHabitModal() {
                 </PopoverContent>
               </Popover>
             </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="endDate">End Date</Label>
+              <Popover open={isOpen} onOpenChange={setIsOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="endDate"
+                    variant={"outline"}
+                    className={cn(
+                      "w-fit min-w-[130px] pl-3 text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    {endDate ? (
+                      formatDate(endDate, "PPP")
+                    ) : (
+                      <span>No end date</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    required
+                    mode="single"
+                    selected={endDate ?? undefined}
+                    onSelect={(day) => {
+                      setEndDate(day ?? null);
+                      setIsOpen(false);
+                      const endDateInput = document.getElementById(
+                        "endDate"
+                      ) as HTMLInputElement;
+                      endDateInput.style.borderColor = "#DDD";
+                    }}
+                    disabled={(date) =>
+                      date > new Date() ||
+                      date < new Date("1900-01-01")
+                    }
+                    //   initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
-
+          <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="type">Type</Label>
+              <Select
+                required
+                name="type"
+                value={type}
+                onValueChange={(value) => setType(value as HabitType)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Type</SelectLabel>
+                    {habitTypeOptions.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="overflow">Overflow</Label>
+              <Switch
+                id="overflow"
+                checked={overflow}
+                onCheckedChange={setOverflow}
+              />
+            </div>
+          </div>
+          <div>
+            <DaysOfWeekPicker
+              daysOfWeek={daysOfWeek}
+              onChange={setDaysOfWeek}
+            />
+          </div>
           <div className="flex justify-end mt-4">
             <Button
               onClick={() => {
