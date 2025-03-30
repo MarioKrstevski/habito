@@ -70,7 +70,7 @@ export default function HabitIconPicker({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="p-2 border rounded flex items-center gap-2 h-8">
+        <button className="p-2 border rounded-md mt-auto flex items-center gap-2 h-9">
           {icon ? (
             icons.includes(icon) ? (
               <DynamicIcon className="w-4 h-4" name={icon as any} />
@@ -111,9 +111,9 @@ export default function HabitIconPicker({
 
         {/* Icon Grid */}
         <div className="flex flex-wrap gap-2 max-h-[214px] overflow-auto">
-          {filteredIcons.map((name) => (
+          {filteredIcons.map((name, idx) => (
             <div
-              key={name}
+              key={name + idx}
               onClick={() => onChange(name)}
               className={` ${name} cursor-pointer p-2 border rounded flex items-center justify-center ${
                 icon === name

@@ -9,6 +9,13 @@ import { Modal } from "@/components/Modal";
 import { Input } from "@/components/ui/input";
 import { useAppState } from "@/hooks/useAppState";
 import { HabitWithParsedYearlyProgress } from "@/types/habits";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@radix-ui/react-dropdown-menu";
+
 interface HabitCardProps {
   habit: HabitWithParsedYearlyProgress;
 }
@@ -78,10 +85,17 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
     return Math.floor(diff / oneDay);
   };
 
-  // TODO: Add functions for delete, archive, and edit
-  const handleDelete = () => {};
-  const handleArchive = () => {};
-  const handleEdit = () => {};
+  const handleDelete = () => {
+    // Implement delete functionality
+  };
+
+  const handleArchive = () => {
+    // Implement archive functionality
+  };
+
+  const handleEdit = () => {
+    // Implement edit functionality
+  };
 
   return (
     <Card className="w-full">
@@ -104,9 +118,37 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={handleIncrement}>+1</Button>
-          <Button variant="outline" size="icon">
-            <MoreVertical />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreVertical />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              side="top"
+              className="w-fit bg-white p-0 border shadow-xl rounded-md"
+            >
+              <DropdownMenuItem
+                className="cursor-pointer hover:bg-gray-100 px-4 py-1"
+                onClick={handleEdit}
+              >
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer hover:bg-gray-100 px-4 py-1"
+                onClick={handleArchive}
+              >
+                Archive
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer hover:bg-gray-100 px-4 py-1"
+                onClick={handleDelete}
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {habit.targetCount > 10 && (
             <Button
               onClick={() => setCustomCompletionModalOpen(true)}

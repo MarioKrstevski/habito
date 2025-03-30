@@ -220,6 +220,10 @@ export default function CreateHabitModal() {
                 </SelectContent>
               </Select>
             </div>
+            <HabitIconPicker
+              icon={icon}
+              onChange={(value) => setIcon(value)}
+            />
           </div>
           {/* Goal & Frequency */}
           <div className="flex flex-col gap-2 mb-4">
