@@ -41,6 +41,12 @@ import HabitIconPicker from "./HabitIconPicker";
 import { Switch } from "@/components/ui/switch";
 import DaysOfWeekPicker from "./DaysOfWeekPicker";
 import TagsSelection from "./TagsSelection";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function CreateHabitModal() {
   const { user } = useUser();
@@ -76,7 +82,7 @@ export default function CreateHabitModal() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: any) => {
     e.preventDefault();
     if (!title) {
       document.getElementById("title")?.focus();
@@ -144,107 +150,140 @@ export default function CreateHabitModal() {
   ];
   return (
     <Modal
+      className="py-2 px-4 gap-2 border-none"
       title="New Habit"
+      innerScroll
       isOpen={isCreateHabitModalOpen}
+      footerJSX={
+        <>
+          {/* Action Buttons */}
+          <div className="flex justify-end ">
+            <Button
+              onClick={() => {
+                setIsCreateHabitModalOpen(false);
+                console.log("closed");
+              }}
+              type="button"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="ml-2"
+              variant="default"
+              onClick={handleSave}
+            >
+              Save
+            </Button>
+          </div>
+        </>
+      }
       onClose={() => setIsCreateHabitModalOpen(false)}
     >
-      <form onSubmit={handleSave}>
-        <div className="p-4">
+      <form onSubmit={handleSave} className="py-1">
+        <div className="p-2 text-sm">
           {/* Name & Icon */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="title" className="text-sm font-medium">
-              Habit Name
-            </Label>
-            <Input
-              required
-              name="title"
-              id="title"
-              className="w-full"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-          {/* Description */}
-          <div className="flex flex-col gap-2">
-            <Label
-              htmlFor="description"
-              className="text-sm font-medium"
-            >
-              Description
-            </Label>
-            <Input
-              required
-              name="description"
-              id="description"
-              className="w-full"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          {/* Icon */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="icon" className="text-sm font-medium">
-              Icon
-            </Label>
-            <HabitIconPicker
-              icon={icon}
-              onChange={(value) => setIcon(value)}
-            />
+          <div className="flex flex-row items-center gap-2 mb-4">
+            <div className="grow">
+              <Label htmlFor="title" className="text-sm font-medium">
+                Habit Name
+              </Label>
+              <Input
+                required
+                name="title"
+                id="title"
+                className="w-full"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="type">Type</Label>
+              <Select
+                required
+                name="type"
+                value={type}
+                onValueChange={(value) => setType(value as HabitType)}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Select Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Type</SelectLabel>
+                    {habitTypeOptions.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           {/* Goal & Frequency */}
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="targetCount">Goal</Label>
-              <div className="flex gap-2">
-                <Input
-                  required
-                  name="targetCount"
-                  id="targetCount"
-                  type="number"
-                  className="w-full max-w-[100px]"
-                  value={targetCount}
-                  onChange={(e) =>
-                    setTargetCount(Number(e.target.value))
-                  }
+          <div className="flex flex-col gap-2 mb-4">
+            <Label htmlFor="targetCount">Goal</Label>
+            <div className="flex gap-2">
+              <Input
+                required
+                name="targetCount"
+                id="targetCount"
+                type="number"
+                className="w-full max-w-[80px]"
+                value={targetCount}
+                onChange={(e) =>
+                  setTargetCount(Number(e.target.value))
+                }
+              />
+
+              <SelectWithInput
+                value={metric}
+                placeholder="Custom: steps/reps/km"
+                onChange={setMetric}
+                options={[
+                  { label: "Times", value: "times" },
+                  { label: "Minutes", value: "minutes" },
+                  { label: "Hours", value: "hours" },
+                ]}
+              />
+
+              <Select
+                value={frequency}
+                onValueChange={(value) =>
+                  setFrequency(value as Frequency)
+                }
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Select Repeat" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Repeat Options</SelectLabel>
+                    {frequencyOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              {/* Overflow */}
+              <div className="flex flex-row gap-2 items-center">
+                <Switch
+                  id="overflow"
+                  checked={overflow}
+                  onCheckedChange={setOverflow}
                 />
-                <SelectWithInput
-                  value={metric}
-                  placeholder="Custom: steps/reps/km"
-                  onChange={setMetric}
-                  options={[
-                    { label: "Times", value: "times" },
-                    { label: "Minutes", value: "minutes" },
-                    { label: "Hours", value: "hours" },
-                  ]}
-                />
-                <Select
-                  value={frequency}
-                  onValueChange={(value) =>
-                    setFrequency(value as Frequency)
-                  }
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select Repeat" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Repeat Options</SelectLabel>
-                      {frequencyOptions.map((option) => (
-                        <SelectItem
-                          key={option.value}
-                          value={option.value}
-                        >
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="overflow">Overflow</Label>
               </div>
             </div>
           </div>
-
-          <div className="flex gap-2">
+          {/* Time of Day & Start Date */}
+          <div className="flex gap-2 mb-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="timeOfDay">Time of Day</Label>
               <Select
@@ -255,7 +294,7 @@ export default function CreateHabitModal() {
                   setTimeOfDay(value as TimeOfDay)
                 }
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Select Time of Day" />
                 </SelectTrigger>
                 <SelectContent>
@@ -307,12 +346,10 @@ export default function CreateHabitModal() {
                       date > new Date() ||
                       date < new Date("1900-01-01")
                     }
-                    //   initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
-            <br />
             <div className="flex flex-col gap-2">
               <Label htmlFor="endDate">End Date</Label>
               <Popover>
@@ -359,67 +396,53 @@ export default function CreateHabitModal() {
                   className="ml-2"
                   onClick={() => setEndDate(null)}
                 >
-                  Remove End Date
+                  X
                 </Button>
               )}
             </div>
           </div>
-          <div className="flex gap-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="type">Type</Label>
-              <Select
-                required
-                name="type"
-                value={type}
-                onValueChange={(value) => setType(value as HabitType)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Type</SelectLabel>
-                    {habitTypeOptions.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="overflow">Overflow</Label>
-              <Switch
-                id="overflow"
-                checked={overflow}
-                onCheckedChange={setOverflow}
-              />
-            </div>
-          </div>
-          <div>
-            <DaysOfWeekPicker
-              daysOfWeek={daysOfWeek}
-              onChange={setDaysOfWeek}
-            />
-          </div>
-          <div>
-            <TagsSelection tags={tags} onChange={setTags} />
-          </div>
-          <div className="flex justify-end mt-4">
-            <Button
-              onClick={() => {
-                setIsCreateHabitModalOpen(false);
-                console.log("closed");
-              }}
-              type="button"
+
+          {/* More Options */}
+          <Collapsible>
+            <CollapsibleTrigger
+              asChild
+              className="text-blue-500 underline"
             >
-              Cancel
-            </Button>
-            <Button type="submit" className="ml-2" variant="default">
-              Save
-            </Button>
-          </div>
+              <Button className="w-full" variant={"outline"}>
+                More Options
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-2">
+              {/* Days of the Week */}
+              <div className="mb-4">
+                <DaysOfWeekPicker
+                  daysOfWeek={daysOfWeek}
+                  onChange={setDaysOfWeek}
+                />
+              </div>
+              {/* Tags */}
+              <div className="mb-4">
+                <TagsSelection tags={tags} onChange={setTags} />
+              </div>
+
+              {/* Description */}
+              <div className="flex flex-col gap-2 mb-4">
+                <Label
+                  htmlFor="description"
+                  className="text-sm font-medium"
+                >
+                  Description
+                </Label>
+                <Textarea
+                  name="description"
+                  id="description"
+                  className="w-full"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </form>
     </Modal>

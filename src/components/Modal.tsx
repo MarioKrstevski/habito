@@ -46,15 +46,17 @@ export const Modal: React.FC<ModalProps> = ({
       <DialogContent
         className={cn(" max-h-[95dvh] w-full ", className)}
       >
-        <DialogHeader className="h-max">
-          <DialogTitle>{title}</DialogTitle>
+        <DialogHeader className="h-max ">
+          <DialogTitle className="h-7 items-center flex">
+            {title}
+          </DialogTitle>
           {description && (
             <DialogDescription>{description}</DialogDescription>
           )}
         </DialogHeader>
         <div
           className={cn(
-            "overflow-y-hidden border-b border-t py-2",
+            "overflow-y-hidden ",
             innerScroll && "max-h-[calc(95dvh-150px)] overflow-y-auto"
           )}
         >

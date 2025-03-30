@@ -41,7 +41,7 @@ const DaysOfWeekPicker: React.FC<DaysOfWeekPickerProps> = ({
   };
 
   return (
-    <div style={{ display: "flex", gap: "10px" }}>
+    <div className="flex gap-2 justify-center py-1">
       {daysOfWeekLabels.map((label) => {
         const day = dayMapping[label as keyof typeof dayMapping]; // Get the corresponding number for each day
         const isSelected = daysOfWeek.includes(day);
@@ -51,7 +51,7 @@ const DaysOfWeekPicker: React.FC<DaysOfWeekPickerProps> = ({
             key={label}
             onClick={() => handleDayClick(day)}
             className={cn(
-              "flex items-center justify-center w-9 text-sm h-9 rounded-full cursor-pointer select-none transition-colors duration-200",
+              "flex items-center justify-center w-9 text-xs h-9 rounded-full cursor-pointer select-none transition-colors duration-200",
               isSelected
                 ? "bg-blue-500 text-white shadow-lg scale-105"
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"

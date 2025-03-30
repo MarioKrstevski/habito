@@ -79,7 +79,10 @@ export default function TagsSelection({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="flex items-center">
+        <Button
+          variant="outline"
+          className="flex w-full items-center"
+        >
           <TagIcon className="mr-2 h-4 w-4" />
           {selectedTags.length > 0 ? (
             <div className="flex flex-wrap gap-1">
