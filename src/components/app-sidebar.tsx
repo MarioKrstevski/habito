@@ -13,6 +13,7 @@ import {
 import {
   ArchiveIcon,
   BarChartIcon,
+  CalendarDaysIcon,
   CalendarIcon,
   CheckIcon,
   CircleIcon,
@@ -57,9 +58,9 @@ const mainItems = [
 ];
 const statisticsItems = [
   {
-    title: "Calendar",
+    title: "Calendar View",
     url: "/calendar",
-    icon: <CalendarIcon />,
+    icon: <CalendarDaysIcon />,
   },
   {
     title: "Statistics",
