@@ -15,9 +15,9 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Protect all other routes except api routes
-  if (isProtectedRoute(req) && !pathname.startsWith("/api")) {
-    await auth.protect();
-  }
+  // if (isProtectedRoute(req) && !pathname.startsWith("/api")) {
+  //   await auth.protect();
+  // }
 });
 
 export const config = {
