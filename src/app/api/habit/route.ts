@@ -52,6 +52,9 @@ export async function POST(request: NextRequest) {
         connect: { clerkId: userId }, // Replace with actual user ID logic
       },
     },
+    include: {
+      yearlyProgress: true,
+    },
   });
 
   return NextResponse.json(newHabit);

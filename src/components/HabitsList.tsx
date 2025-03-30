@@ -4,8 +4,10 @@ import { useAppState } from "@/hooks/useAppState";
 import { parseAsString, useQueryState } from "nuqs";
 import { Button } from "./ui/button";
 import HabitCard from "./HabitCard";
+import { useEffect } from "react";
 export function HabitsList() {
   const { habits, dayIndex, setHabits, appDate } = useAppState();
+  console.log("habits", habits.length);
 
   console.log(appDate);
   const [filter, setFilter] = useQueryState<string>(
@@ -24,9 +26,21 @@ export function HabitsList() {
     // )
     .filter((habit) => {
       const habitStartDate = new Date(habit.startDate);
+      const appDateNow = new Date(appDate ?? new Date());
+      const dateNow = new Date();
+      let checkAgainstNow = false;
+      if (
+        appDateNow.getDate() === new Date().getDate() &&
+        appDateNow.getMonth() === new Date().getMonth() &&
+        appDateNow.getFullYear() === new Date().getFullYear()
+      ) {
+        checkAgainstNow = true;
+      }
       // console.log(habitStartDate);
       // console.log(appDate);
-      return appDate && habitStartDate <= appDate;
+      return checkAgainstNow
+        ? habitStartDate <= dateNow
+        : habitStartDate <= appDateNow;
     })
     .filter((habit) => {
       const yearlyProgress = habit.yearlyProgress.find(
@@ -69,6 +83,11 @@ export function HabitsList() {
       }
       return !habit.isArchived;
     });
+
+  //effect description
+  useEffect(() => {
+    console.log("habits", habits.length);
+  }, [habits]);
   if (filteredHabits.length === 0) {
     if (filter === "completed") {
       return (
@@ -92,7 +111,7 @@ export function HabitsList() {
   }
 
   return (
-    <div className="flex-1 p-8">
+    <div key={habits.length} className="flex-1 p-8">
       <h1 className="text-2xl font-bold mb-4">
         Filter: {filter} {typeof filter}
       </h1>

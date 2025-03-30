@@ -118,25 +118,37 @@ export default function CreateHabitModal() {
       startDate,
     });
 
-    const newHabit = await fetch("/api/habit", {
-      method: "POST",
-      body: JSON.stringify({
-        title: title,
-        description: description,
-        icon: icon,
-        frequency: frequency as Frequency,
-        timeOfDay: timeOfDay,
-        type: type as HabitType,
-        overflow: overflow,
-        metric: metric,
-        daysOfWeek: daysOfWeek,
-        targetCount: targetCount,
-        startDate: startDate,
-        endDate: endDate,
-        tags: tags,
-      }),
-    }).then((res) => res.json());
-    const newHabits = [...habits, newHabit];
+    const newHabit: HabitWithYearlyProgress = await fetch(
+      "/api/habit",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          title: title,
+          description: description,
+          icon: icon,
+          frequency: frequency as Frequency,
+          timeOfDay: timeOfDay,
+          type: type as HabitType,
+          overflow: overflow,
+          metric: metric,
+          daysOfWeek: daysOfWeek,
+          targetCount: targetCount,
+          startDate: startDate,
+          endDate: endDate,
+          tags: tags,
+        }),
+      }
+    ).then((res) => res.json());
+    const newHabitWithParsedYearlyProgress = {
+      ...newHabit,
+      yearlyProgress: newHabit.yearlyProgress.map(
+        (yearlyProgress) => ({
+          ...yearlyProgress,
+          completions: yearlyProgress.completions.split(","),
+        })
+      ),
+    };
+    const newHabits = [...habits, newHabitWithParsedYearlyProgress];
     setHabits(newHabits);
     setIsCreateHabitModalOpen(false);
   };
