@@ -72,13 +72,19 @@ export default function HabitIconPicker({
       <DropdownMenuTrigger asChild>
         <button className="p-2 border rounded-md mt-auto flex items-center gap-2 h-9">
           {icon ? (
-            icons.includes(icon) ? (
+            icon === "default" ? (
+              <LucideIcons.ShieldQuestionIcon className="w-4 h-4" />
+            ) : icons.includes(icon) ? (
               <DynamicIcon className="w-4 h-4" name={icon as any} />
             ) : (
               icon
             )
+          ) : isEmoji(icon) ? (
+            <span className="text-2xl">{icon}</span>
           ) : (
-            <span>Select Icon</span>
+            <span>
+              <LucideIcons.ShieldQuestionIcon className="w-4 h-4" />
+            </span>
           )}
         </button>
       </DropdownMenuTrigger>

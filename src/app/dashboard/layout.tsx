@@ -1,4 +1,5 @@
 import CreateHabitModal from "./components/CreateHabitModal";
+import EditHabitModal from "./components/EditHabitModal";
 import HabitsHeader from "./components/HabitsHeader";
 
 interface DashboardLayoutProps {
@@ -11,6 +12,7 @@ export default function DashboardLayout({
     <>
       <HabitsHeader />
       <CreateHabitModal />
+      <EditHabitModal />
       <div className="flex flex-col h-screen">
         <div className="flex-1">{children}</div>
       </div>

@@ -15,13 +15,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@radix-ui/react-dropdown-menu";
+import { DynamicIcon } from "lucide-react/dynamic";
+import { isEmoji } from "@/lib/utils";
 
 interface HabitCardProps {
   habit: HabitWithParsedYearlyProgress;
 }
 
 const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
-  const { habits, setHabits } = useAppState();
+  const {
+    habits,
+    setHabits,
+    setIsEditHabitModalOpen,
+    setSelectedHabit,
+  } = useAppState();
   const yearlyProgress = habit.yearlyProgress.find(
     (progress) => progress.year === new Date().getFullYear()
   );
@@ -63,14 +70,15 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
   };
 
   const updateYearlyProgress = async (newCompletions: number[]) => {
-    await fetch(`/api/habit/progress`, {
-      method: "POST",
+    const updatedYearlyProgress = await fetch(`/api/habit/progress`, {
+      method: "PATCH",
       body: JSON.stringify({
-        habitId: habit.id,
-        year: new Date().getFullYear(),
+        hypID: yearlyProgress?.id,
         completions: newCompletions.join(","),
       }),
     }).then((res) => res.json());
+
+    return updatedYearlyProgress;
   };
 
   const getDayOfYear = (date: Date): number => {
@@ -85,26 +93,55 @@ const HabitCard: React.FC<HabitCardProps> = ({ habit }) => {
     return Math.floor(diff / oneDay);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     // Implement delete functionality
+    const deletedHabit = await fetch(`/api/habit`, {
+      method: "DELETE",
+      body: JSON.stringify({ id: habit.id }),
+    }).then((res) => res.json());
+
+    setHabits(habits.filter((h) => h.id !== habit.id));
   };
 
-  const handleArchive = () => {
+  const handleArchive = async () => {
     // Implement archive functionality
+    const updatedHabit = await fetch(`/api/habit/archive`, {
+      method: "PATCH",
+      body: JSON.stringify({ id: habit.id }),
+    }).then((res) => res.json());
+
+    setHabits(
+      habits.map((h) =>
+        h.id === habit.id ? { ...h, isArchived: true } : h
+      )
+    );
   };
 
   const handleEdit = () => {
-    // Implement edit functionality
+    setSelectedHabit(habit);
+    setTimeout(() => {
+      setIsEditHabitModalOpen(true);
+    }, 100);
   };
 
+  const isEmojiIcon = isEmoji(habit.icon || "default");
+  let iconUsed = habit.icon ? habit.icon : "default";
+  if (iconUsed === "default") {
+    iconUsed = "shield-question";
+  }
   return (
     <Card className="w-full">
       <CardContent className="flex items-center justify-between p-4">
         <div className="flex items-center gap-4">
           <div className="rounded-full bg-gray-200 w-10 h-10 flex items-center justify-center">
-            {
-              habit.icon ? habit.icon : "?" // Default icon if none is provided
-            }
+            {isEmojiIcon ? (
+              <span className="text-2xl">{iconUsed}</span>
+            ) : (
+              <DynamicIcon
+                className="w-4 h-4"
+                name={iconUsed as any}
+              />
+            )}
           </div>
           <div>
             <CardTitle className="text-lg font-semibold">

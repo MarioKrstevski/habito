@@ -19,6 +19,11 @@ export async function POST(request: NextRequest) {
     targetCount,
     startDate,
     endDate,
+    icon,
+    overflow,
+    daysOfWeek,
+    metric,
+    tags,
   } = await request.json();
 
   console.log({ startDate, timeOfDay });
@@ -26,9 +31,13 @@ export async function POST(request: NextRequest) {
     data: {
       title,
       description,
+      icon,
       frequency,
       timeOfDay,
       type,
+      overflow,
+      daysOfWeek,
+      metric,
       targetCount,
       startDate,
       endDate,
@@ -38,6 +47,7 @@ export async function POST(request: NextRequest) {
           completions: new Array(365).fill("0").join(","),
         },
       },
+      tags,
       user: {
         connect: { clerkId: userId }, // Replace with actual user ID logic
       },
@@ -47,7 +57,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(newHabit);
 }
 
-export async function PUT(request: NextRequest) {
+export async function PATCH(request: NextRequest) {
   const { userId } = getAuth(request);
   if (!userId) {
     return NextResponse.json(
@@ -58,7 +68,24 @@ export async function PUT(request: NextRequest) {
   const { id, updates } = await request.json();
   const updatedHabit = await db.habit.update({
     where: { id },
-    data: updates,
+    data: {
+      title: updates.title,
+      description: updates.description,
+      icon: updates.icon,
+      frequency: updates.frequency,
+      timeOfDay: updates.timeOfDay,
+      type: updates.type,
+      overflow: updates.overflow,
+      metric: updates.metric,
+      daysOfWeek: updates.daysOfWeek,
+      targetCount: updates.targetCount,
+      startDate: updates.startDate,
+      endDate: updates.endDate,
+      tags: updates.tags,
+    },
+    include: {
+      yearlyProgress: true,
+    },
   });
 
   return NextResponse.json(updatedHabit);

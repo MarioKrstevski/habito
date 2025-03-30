@@ -2,7 +2,7 @@
 import { Modal } from "@/components/Modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppState } from "@/hooks/useAppState";
 import {
   Select,
@@ -48,29 +48,45 @@ import {
 } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function CreateHabitModal() {
-  const { user } = useUser();
-  const { tags: tagsFromAppState } = useAppState();
+export default function EditHabitModal() {
   const {
-    isCreateHabitModalOpen,
+    isEditHabitModalOpen,
     habits,
     setHabits,
-    setIsCreateHabitModalOpen,
+    setIsEditHabitModalOpen,
+    selectedHabit,
+    tags: tagsFromAppState,
   } = useAppState();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [icon, setIcon] = useState("");
-  const [frequency, setFrequency] = useState<Frequency>("DAILY");
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("ANY");
-  const [type, setType] = useState<HabitType>("BUILD");
-  const [overflow, setOverflow] = useState(false);
 
-  const [daysOfWeek, setDaysOfWeek] = useState<number[]>([
-    0, 1, 2, 3, 4, 5, 6,
-  ]);
-  const [metric, setMetric] = useState("times");
-  const [targetCount, setTargetCount] = useState(1);
-  const [startDate, setStartDate] = useState<Date | null>(new Date());
+  console.log({ selectedHabit });
+  const [title, setTitle] = useState(selectedHabit?.title);
+  const [description, setDescription] = useState(
+    selectedHabit?.description ?? ""
+  );
+  const [icon, setIcon] = useState(selectedHabit?.icon ?? "default");
+  const [frequency, setFrequency] = useState<Frequency>(
+    selectedHabit?.frequency ?? "DAILY"
+  );
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(
+    selectedHabit?.timeOfDay ?? "ANY"
+  );
+  const [type, setType] = useState<HabitType>(
+    selectedHabit?.type ?? "BUILD"
+  );
+  const [overflow, setOverflow] = useState(selectedHabit?.overflow);
+
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>(
+    selectedHabit?.daysOfWeek ?? [0, 1, 2, 3, 4, 5, 6]
+  );
+  const [metric, setMetric] = useState(
+    selectedHabit?.metric ?? "times"
+  );
+  const [targetCount, setTargetCount] = useState(
+    selectedHabit?.targetCount ?? 1
+  );
+  const [startDate, setStartDate] = useState<Date | null>(
+    selectedHabit?.startDate ?? new Date()
+  );
   const [tags, setTags] = useState<string[]>(() => {
     if (tagsFromAppState) {
       return tagsFromAppState;
@@ -78,14 +94,32 @@ export default function CreateHabitModal() {
     return [];
   });
 
+  useEffect(() => {
+    setTags(selectedHabit?.tags ?? []);
+    setTitle(selectedHabit?.title ?? "");
+    setDescription(selectedHabit?.description ?? "");
+    setIcon(selectedHabit?.icon ?? "default");
+    setFrequency(selectedHabit?.frequency ?? "DAILY");
+    setTimeOfDay(selectedHabit?.timeOfDay ?? "ANY");
+    setType(selectedHabit?.type ?? "BUILD");
+    setOverflow(selectedHabit?.overflow ?? false);
+    setDaysOfWeek(selectedHabit?.daysOfWeek ?? [0, 1, 2, 3, 4, 5, 6]);
+    setMetric(selectedHabit?.metric ?? "times");
+    setTargetCount(selectedHabit?.targetCount ?? 1);
+    setStartDate(selectedHabit?.startDate ?? new Date());
+    setEndDate(selectedHabit?.endDate ?? null);
+  }, [selectedHabit]);
+
   // tODO
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(
+    selectedHabit?.endDate ?? null
+  );
   const [isStartDateCalendarOpen, setIsStartDateCalendarOpen] =
     useState(false);
   const [isEndDateCalendarOpen, setIsEndDateCalendarOpen] =
     useState(false);
 
-  const handleSave = async (e: any) => {
+  const handleEdit = async (e: any) => {
     e.preventDefault();
     if (!title) {
       document.getElementById("title")?.focus();
@@ -114,31 +148,47 @@ export default function CreateHabitModal() {
       type,
       frequency,
       overflow,
-      tags,
       startDate,
     });
 
-    const newHabit = await fetch("/api/habit", {
-      method: "POST",
-      body: JSON.stringify({
-        title: title,
-        description: description,
-        icon: icon,
-        frequency: frequency as Frequency,
-        timeOfDay: timeOfDay,
-        type: type as HabitType,
-        overflow: overflow,
-        metric: metric,
-        daysOfWeek: daysOfWeek,
-        targetCount: targetCount,
-        startDate: startDate,
-        endDate: endDate,
-        tags: tags,
-      }),
-    }).then((res) => res.json());
-    const newHabits = [...habits, newHabit];
+    const updatedHabit: HabitWithYearlyProgress = await fetch(
+      `/api/habit`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: selectedHabit?.id,
+          updates: {
+            title: title,
+            description: description,
+            icon: icon,
+            frequency: frequency as Frequency,
+            timeOfDay: timeOfDay,
+            type: type as HabitType,
+            overflow: overflow,
+            metric: metric,
+            daysOfWeek: daysOfWeek,
+            targetCount: targetCount,
+            startDate: startDate,
+            endDate: endDate,
+            tags: tags,
+          },
+        }),
+      }
+    ).then((res) => res.json());
+    let parsedHabit: HabitWithParsedYearlyProgress = {
+      ...updatedHabit,
+      yearlyProgress: updatedHabit.yearlyProgress.map(
+        (yearlyProgress: HabitYearlyProgress) => ({
+          ...yearlyProgress,
+          completions: yearlyProgress.completions.split(","),
+        })
+      ),
+    };
+    const newHabits = habits.map((habit) =>
+      habit.id === updatedHabit.id ? parsedHabit : habit
+    );
     setHabits(newHabits);
-    setIsCreateHabitModalOpen(false);
+    setIsEditHabitModalOpen(false);
   };
   const frequencyOptions = [
     { label: "Daily", value: "DAILY" },
@@ -160,15 +210,14 @@ export default function CreateHabitModal() {
       className="py-2 px-4 gap-2 border-none"
       title="New Habit"
       innerScroll
-      isOpen={isCreateHabitModalOpen}
+      isOpen={isEditHabitModalOpen}
       footerJSX={
         <>
           {/* Action Buttons */}
           <div className="flex justify-end ">
             <Button
               onClick={() => {
-                setIsCreateHabitModalOpen(false);
-                console.log("closed");
+                setIsEditHabitModalOpen(false);
               }}
               type="button"
             >
@@ -178,16 +227,16 @@ export default function CreateHabitModal() {
               type="submit"
               className="ml-2"
               variant="default"
-              onClick={handleSave}
+              onClick={handleEdit}
             >
               Save
             </Button>
           </div>
         </>
       }
-      onClose={() => setIsCreateHabitModalOpen(false)}
+      onClose={() => setIsEditHabitModalOpen(false)}
     >
-      <form className="py-1">
+      <form onSubmit={handleEdit} className="py-1">
         <div className="p-2 text-sm">
           {/* Name & Icon */}
           <div className="flex flex-row items-center gap-2 mb-4">
@@ -401,7 +450,7 @@ export default function CreateHabitModal() {
                       endDateInput.style.borderColor = "#DDD";
                     }}
                     disabled={(date) =>
-                      !startDate || date < startDate
+                      startDate ? date < new Date(startDate) : false
                     }
                   />
                 </PopoverContent>

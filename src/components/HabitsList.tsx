@@ -49,7 +49,10 @@ export function HabitsList() {
       if (!yearlyProgress) return false;
 
       const completions = yearlyProgress.completions;
-      if (filter === "all") return true;
+      // if (filter === "archived") {
+      //   return habit.isArchived;
+      // }
+      // if (filter === "all") return true;
 
       if (filter === "completed") {
         return completions[dayIndex] === "1";
@@ -58,6 +61,13 @@ export function HabitsList() {
       if (filter === "unfinished") {
         return completions[dayIndex] === "0";
       }
+      return true;
+    })
+    .filter((habit) => {
+      if (filter === "archived") {
+        return habit.isArchived;
+      }
+      return !habit.isArchived;
     });
   if (filteredHabits.length === 0) {
     if (filter === "completed") {

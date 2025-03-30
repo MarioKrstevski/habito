@@ -6,6 +6,8 @@ import { create } from "zustand";
 interface useAppStateStore {
   appDate: Date | null;
   isCreateHabitModalOpen: boolean;
+  isEditHabitModalOpen: boolean;
+  selectedHabit: Habit | null;
   dayIndex: number;
   tags: string[];
   habits: HabitWithParsedYearlyProgress[];
@@ -13,6 +15,8 @@ interface useAppStateStore {
   setAppDate: (date: Date | null) => void;
   setDayIndex: (dayIndex: number) => void;
   setIsCreateHabitModalOpen: (isOpen: boolean) => void;
+  setIsEditHabitModalOpen: (isOpen: boolean) => void;
+  setSelectedHabit: (habit: Habit | null) => void;
   setTags: (tags: string[]) => void;
 }
 
@@ -20,6 +24,8 @@ export const useAppState = create<useAppStateStore>((set) => ({
   appDate: new Date(),
   tags: [],
   isCreateHabitModalOpen: false,
+  isEditHabitModalOpen: false,
+  selectedHabit: null,
   dayIndex: getCachedDateIndex(
     new Date().getMonth(),
     new Date().getDate()
@@ -34,8 +40,12 @@ export const useAppState = create<useAppStateStore>((set) => ({
   setDayIndex: (dayIndex: number) => set({ dayIndex }),
   setHabits: (habits: HabitWithParsedYearlyProgress[]) =>
     set({ habits }),
+  setSelectedHabit: (habit: Habit | null) =>
+    set({ selectedHabit: habit }),
   setIsCreateHabitModalOpen: (isOpen: boolean) =>
     set({ isCreateHabitModalOpen: isOpen }),
+  setIsEditHabitModalOpen: (isOpen: boolean) =>
+    set({ isEditHabitModalOpen: isOpen }),
   setTags: (tags: string[]) => set({ tags }),
 }));
 

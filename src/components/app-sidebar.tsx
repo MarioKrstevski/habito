@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
+  ArchiveIcon,
   BarChartIcon,
   CalendarIcon,
   CheckIcon,
@@ -47,6 +48,11 @@ const mainItems = [
     title: "Completed",
     href: "/dashboard?filter=completed",
     icon: <CheckIcon />,
+  },
+  {
+    title: "Archived",
+    href: "/dashboard?filter=archived",
+    icon: <ArchiveIcon />,
   },
 ];
 const statisticsItems = [
