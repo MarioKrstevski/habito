@@ -16,6 +16,7 @@ export const isEmoji = (char: string) => {
 export function getCachedDateIndex(month?: number, day?: number) {
   // Default to today's date if nothing is passed
   const today = new Date();
+  console.log({ month, day }, today);
   const resolvedMonth = month ?? today.getMonth();
   const resolvedDay = day ?? today.getDate();
 
@@ -61,7 +62,11 @@ export function getCachedDateIndex(month?: number, day?: number) {
 }
 
 export function formatDate(date: Date, format: string) {
-  return `${date.getDate()} ${date.toLocaleString("default", {
+  if (!date) return "nodate";
+  const dateToWorkWith = new Date(date);
+  const day = dateToWorkWith.getDate();
+  const month = dateToWorkWith.toLocaleString("default", {
     month: "long",
-  })}`;
+  });
+  return `${day} ${month}`;
 }

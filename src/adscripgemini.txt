@@ -1,0 +1,413 @@
+(function(window) {
+    "use strict";
+
+    const VERSION = "1.1.16";
+    const DEFAULT_SETTINGS = {
+        script: null,
+        autobind: true,
+        barrier: null,
+        priorBjs: true,
+        otherBjs: [],
+        callbacks: {
+            open: [],
+            scheme: []
+        },
+        window: {
+            url: null,
+            fullscreen: false,
+            width: 1001,
+            height: 800,
+            type: "popunder",
+            chromePopunder: false
+        },
+        freq: {
+            qty: 2,
+            period: 86400, // 24 hours in seconds
+            distances: null,
+            scheme: "time",
+            distance: 0,
+            context: "domain",
+            session: false,
+            sessionKeepAliveTime: 0,
+            sessionExpiration: 3600, // 1 hour in seconds
+            hashed: true,
+            pagelim: 0,
+            max: 0
+        },
+        misc: {
+            safe: false,
+            chromeTab: true,
+            ontouch: true,
+            newTab: false,
+            under: true,
+            bindTo: [],
+            ignoreTo: [],
+            download: [],
+            stopUrls: [],
+            coverTags: ["iframe"],
+            perpage: 1000,
+            coverScrollbar: true,
+            fallbackToPopup: false,
+            forcePopup: false
+        },
+        elements: {
+            media: true,
+            include: null,
+            exclude: false,
+            isActiveElement: null
+        },
+        add: {
+            pixels: [],
+            scripts: [],
+            callbacks: {
+                open: [],
+                scheme: []
+            },
+            title: null,
+            keywords: null,
+            urlParamsObj: {}
+        },
+        counters: {
+            domain: "__cntd",
+            page: "__cntp",
+            iframePage: "__cntip",
+            max: "__cntm",
+            schemeClicks: "__cnsc",
+            schemeSeq: "__cnss",
+            dailySeq: "__cns24s",
+            firstLoadTimer: "__tlfr",
+            lastTimer: "__tlo",
+            lastPageTimer: "__tlop"
+        },
+        counterPostfixes: {
+            domain: null,
+            page: null,
+            iframePage: null,
+            max: null,
+            schemeClicks: null,
+            schemeSeq: null,
+            dailySeq: null,
+            firstLoadTimer: null,
+            lastTimer: null,
+            lastPageTimer: null
+        },
+        pageGroup: "abcdefgh",
+        names: {
+            iabc: "__iabc",
+            schemeSeq: "sseq",
+            dailySeq: "dseq",
+            clickedElement: "1",
+            windowType: "rsrc",
+            clickedElementLink: "cel"
+        },
+        delayPop: {
+            url: null,
+            isActive: false,
+            delay: 30
+        },
+        onlyClickable: false,
+        hash: null,
+        bdVar: "__htaBDI",
+        popns : "popns"
+    };
+
+    const settings = {};
+    const localCounters = {
+        lastActiveTime: 0,
+        lastOpenTime: 0,
+        loadedTime: Math.floor(Date.now() / 1000)
+    };
+    let eventTarget = null;
+    let alreadyOpen = false;
+    let multipleTabs = false;
+
+    const utils = {
+        isDOMElement: function(element) {
+            return element instanceof HTMLElement;
+        },
+        cookieEnabled: function() {
+            try {
+                document.cookie = "cookietest=1";
+                const enabled = document.cookie.indexOf("cookietest=") !== -1;
+                document.cookie = "cookietest=1; expires=Thu, 01-Jan-1970 00:00:01 GMT";
+                return enabled;
+            } catch (e) {
+                return false;
+            }
+        },
+        isReloaded: function() {
+            const targetWindow = settings.freq.context === "iframe-page" ? window.parent : window;
+            return targetWindow.performance.navigation && targetWindow.performance.navigation.type === targetWindow.performance.navigation.TYPE_RELOAD;
+        },
+        _storage: function() {
+            const storage = {
+                _list: {},
+                _isAvailable: function(type, from) {
+                    if (storage._isAvailable.result !== undefined) {
+                        return storage._isAvailable.result;
+                    }
+                    try {
+                        const store = window[type];
+                        const testKey = "__storage_test__";
+                        store.setItem(testKey, testKey);
+                        storage._isAvailable.message = `true: ${store.getItem(testKey)}; type: ${type}; from: ${from}`;
+                        return storage._isAvailable.result = true;
+                    } catch (e) {
+                        const isDOMException = typeof DOMException !== "undefined" && e instanceof DOMException;
+                        const quotaExceeded = isDOMException && (e.code === 22 || e.code === 1014 || e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED") && window[type] && window[type].length !== 0;
+                        storage._isAvailable.message = "catch";
+                        if (quotaExceeded) {
+                            storage._isAvailable.message = `Result: TRUE. Details: e.isDOMException - ${isDOMException}; e.code - ${e.code}; e.name - ${e.name}; e.storage - ${window[type]}; FROM... ${from}!`;
+                        }
+                        return storage._isAvailable.result = quotaExceeded;
+                    }
+                },
+                _init: function() {
+                    if ("onstorage" in window) {
+                        window.addEventListener("storage", storage._storageEvent.bind(storage));
+                    }
+                },
+                subscribe: function(key, callback) {
+                    if (key !== null && typeof callback === "function") {
+                        if (!storage._list.hasOwnProperty(key)) {
+                            storage._list[key] = [];
+                        }
+                        storage._list[key].push(callback);
+                    }
+                    return storage;
+                },
+                _storageEvent: function(event) {
+                    event = event || window.event;
+                    if (storage._list.hasOwnProperty(event.key)) {
+                        storage._list[event.key].forEach(callback => callback(storage.get(event.key), event));
+                    }
+                },
+                get: function(key) {
+                    if (!storage._isAvailable("localStorage", "get")) {
+                        return undefined;
+                    }
+                    try {
+                        const value = window.localStorage.getItem(key);
+                        if (value && /^:[bdfn0]:/.test(value)) {
+                            const type = value.slice(1, 2);
+                            const data = value.slice(3);
+                            const parsers = {
+                                "0": () => null,
+                                "n": value => Number(value),
+                                "b": value => value === "true",
+                                "d": value => new Date(value),
+                                "f": value => Function("return " + value)()
+                            };
+                            return parsers[type](data);
+                        }
+                        return JSON.parse(value);
+                    } catch (e) {
+                        return undefined;
+                    }
+                },
+                set: function(key, value) {
+                    if (!storage._isAvailable("localStorage", "set")) {
+                        return storage;
+                    }
+                    const type = Object.prototype.toString.call(value).split(/\s|\]/)[1];
+                    const typeCodes = {
+                        "Null": "0",
+                        "Date": "d",
+                        "Number": "n",
+                        "Boolean": "b",
+                        "Function": "f"
+                    };
+                    if (typeCodes.hasOwnProperty(type)) {
+                        const parser = {
+                            "d": value => value.toString(),
+                            "f": value => value.toString(),
+                            default: value => JSON.stringify(value)
+                        };
+                        value = `:<span class="math-inline">\{typeCodes\[type\]\}\:</span>{parser[type](value)}`;
+                    } else {
+                        value = JSON.stringify(value);
+                    }
+                    localStorage.setItem(key, value);
+                    return storage;
+                }
+            };
+            storage._init();
+            return storage;
+        }(),
+        addScript: function(url) {
+            utils.addEmbed(url, "SCRIPT");
+        },
+        addPixel: function(url) {
+            utils.addEmbed(url, "IMG");
+        },
+        addEmbed: function(url, type) {
+            if (!url) {
+                return;
+            }
+            try {
+                const element = document.createElement(type);
+                if (type && type.toUpperCase() === "IMG") {
+                    element.width = element.height = "16";
+                    element.style.display = "none";
+                    element.onload = element.onerror = utils.removeElement;
+                }
+                element.src = url;
+                utils.appendToBody({ element });
+            } catch (e) {
+                sendError(e, { situation: "Error in addEmbed." });
+            }
+        },
+        appendToBody: function({ element, callback }) {
+            try {
+                if (!document.body) {
+                    if (arguments.instant) {
+                        try {
+                            document.body = document.createElement("BODY");
+                            document.body.fakeBody = true;
+                        } catch (e) {
+                            window.addEventListener("DOMContentLoaded", () => {
+                                utils.appendElement(element, callback);
+                            });
+                            return;
+                        }
+                    } else if (!/complete|interactive|loaded/.test(document.readyState)) {
+                        window.addEventListener("DOMContentLoaded", () => {
+                            utils.appendElement(element, callback);
+                        });
+                        return;
+                    }
+                }
+                utils.appendElement(element, callback);
+            } catch (e) {
+                sendInfo({ message: "appendToBodyF FAIL: " + e.message });
+            }
+        },
+        appendElement: function(element, callback) {
+            document.body.appendChild(element);
+            if (callback) {
+                callback(element);
+            }
+        },
+        removeElement: function(element) {
+            try {
+                if (element instanceof Node && element.parentElement) {
+                    element.parentElement.removeChild(element);
+                }
+            } catch (e) {
+                sendInfo({ message: "parentElement?: " + e.message });
+            }
+        },
+        ige: function(userAgent) {
+            if (!/android|iphone|ipad|ipod/.test(userAgent)) {
+                return false;
+            }
+            try {
+                const mimeTypes = navigator.mimeTypes;
+                if (mimeTypes) {
+                    for (let i = 0; i < mimeTypes.length; i++) {
+                        if (mimeTypes[i] && mimeTypes[i].type === "application/java-deployment-toolkit") {
+                            if ("Touch" in window && "TouchList" in window) {
+                                return false;
+                            }
+                            return true;
+                        }
+                    }
+                }
+            } catch (e) {
+                return false;
+            }
+            return false;
+        },
+        browser: function() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const browserInfo = {
+                mobile: /android|webos|iphone|ipad|ipod|blackberry|windows phone|iemobile|opera mini/.test(userAgent),
+                webkit: /webkit/gi.test(userAgent),
+                mozilla: /mozilla/gi.test(userAgent) && !/(compatible|webkit)/.test(userAgent),
+                chrome: /chrome/gi.test(userAgent),
+                msie: /msie/gi.test(userAgent) && !/opera/.test(userAgent),
+                firefox: /firefox/gi.test(userAgent),
+                safari: /safari/gi.test(userAgent) && !/chrome/.test(userAgent),
+                opera: /opera|opr/gi.test(userAgent),
+                android: /android/gi.test(userAgent),
+                macosx: /mac os x/gi.test(userAgent),
+                ios: /iphone|ipad|ipod/gi.test(userAgent),
+                winphone: /windows phone/gi.test(userAgent)
+            };
+            browserInfo.version = browserInfo.safari ? (userAgent.match(/.+(?:ri)[/: ]([\d.]+)/) || [])[1] : (userAgent.match(/.+(?:ox|me|ra|ie)[/: ]([\d.]+)/) || [])[1];
+            return browserInfo;
+        },
+        ua: {
+            initialize: function() {
+                this.maps = {
+                    browser: {
+                        oldsafari: {
+                            major: {
+                                "1": ["/8", "/1", "/3"],
+                                "2": "/4",
+                                "?": "/"
+                            },
+                            version: {
+                                "1.0": "/8",
+                                "1.2": "/1",
+                                "1.3": "/3",
+                                "2.0": "/412",
+                                "2.0.2": "/416",
+                                "2.0.3": "/417",
+                                "2.0.4": "/419",
+                                "?": "/"
+                            }
+                        }
+                    },
+                    os: {
+                        windows: {
+                            version: {
+                                "ME": "4.90",
+                                "NT 3.11": "NT3.51",
+                                "NT 4.0": "NT4.0",
+                                "2000": "NT 5.0",
+                                "XP": ["NT 5.1", "NT 5.2"],
+                                "Vista": "NT 6.0",
+                                "7": "NT 6.1",
+                                "8": "NT 6.2",
+                                "8.1": "NT 6.3",
+                                "RT": "ARM"
+                            }
+                        }
+                    }
+                };
+                this.regexes = {
+                    browser: [
+                        [/(opera\smini)\/((\d+)?[\w.-]+)/i, /(opera\s[mobileta]+).+version\/((\d+)?[\w.-]+)/i, /(opera).+version\/((\d+)?[\w.]+)/i, /(opera)[/\s]+((\d+)?[\w.]+)/i],
+                        ["name", "version", "major"],
+                        [/\s(opr)\/((\d+)?[\w.]+)/i],
+                        [["name", "Opera"], "version", "major"],
+                        [/(kindle)\/((\d+)?[\w.]+)/i, /(lunascape|maxthon|netfront|jasmine|blazer)[/\s]?((\d+)?[\w.]+)*/i, /(avant\s|iemobile|slim|baidu)(?:browser)?[/\s]?((\d+)?[\w.]*)/i, /(?:ms|\()(ie)\s((\d+)?[\w.]+)/i, /(rekonq)((?:\/)[\w.]+)*/i, /(chromium|flock|rockmelt|midori|epiphany|silk|skyfire|ovibrowser|bolt|iron)\/((\d+)?[\w.-]+)/i],
+                        ["name", "version", "major"],
+                        [/(trident).+rv[:\s]((\d+)?[\w.]+).+like\sgecko/i],
+                        [["name", "IE"], "version", "major"],
+                        [/(yabrowser)\/((\d+)?[\w.]+)/i],
+                        [["name", "Yandex"], "version", "major"],
+                        [/(comodo_dragon)\/((\d+)?[\w.]+)/i],
+                        [["name", /_/g, " "], "version", "major"],
+                        [/(chrome|omniweb|arora|[tizenoka]{5}\s?browser)\/v?((\d+)?[\w.]+)/i],
+                        ["name", "version", "major"],
+                        [/(dolfin)\/((\d+)?[\w.]+)/i],
+                        [["name", "Dolphin"], "version", "major"],
+                        [/((?:android.+)crmo|crios)\/((\d+)?[\w.]+)/i],
+                        [["name", "Chrome"], "version", "major"],
+                        [/version\/((\d+)?[\w.]+).+?mobile\/\w+\s(safari)/i],
+                        ["version", "major", ["name", "Mobile Safari"]],
+                        [/version\/((\d+)?[\w.]+).+?(mobile\s?safari|safari)/i],
+                        ["version", "major", "name"],
+                        [/webkit.+?(mobile\s?safari|safari)(\/[\w.]+)/i],
+                        ["name", ["major", utils.ua.mapper.str, utils.ua.maps.browser.oldsafari.major], ["version", utils.ua.mapper.str, utils.ua.maps.browser.oldsafari.version]],
+                        [/(konqueror)\/((\d+)?[\w.]+)/i, /(webkit|khtml)\/((\d+)?[\w.]+)/i],
+                        ["name", "version", "major"],
+                        [/(navigator|netscape)\/((\d+)?[\w.-]+)/i],
+                        [["name", "Netscape"], "version", "major"],
+                        [/(swiftfox)/i, /(icedragon|iceweasel|camino|chimera|fennec|maemo\sbrowser|minimo|conkeror)[/\s]?((\d+)?[\w.+]+)/i, /(firefox|seamonkey|k-meleon|icecat|iceape|firebird|phoenix)\/((\d+)?[\w.-]+)/i, /(mozilla)\/((\d+)?[\w.]+).+rv:.+gecko\/\d+/i, /(uc\s?browser|polaris|lynx|dillo|palemoon|qutebrowser)[\/\s]?((\d+)?[\w.]+)*/i],
+                        ["name", "version", "major"],
+                        [/(links)\s((\d+)?[\w.]+)/i],
+                        [["name", "Links"], "version", "major"],
+                        [/

@@ -3,9 +3,11 @@
 import { useAppState } from "@/hooks/useAppState";
 import { parseAsString, useQueryState } from "nuqs";
 import { Button } from "./ui/button";
+import HabitCard from "./HabitCard";
 export function HabitsList() {
   const { habits, dayIndex, setHabits, appDate } = useAppState();
 
+  console.log(appDate);
   const [filter, setFilter] = useQueryState<string>(
     "filter",
     parseAsString.withDefault("all")
@@ -87,41 +89,43 @@ export function HabitsList() {
       <h1 className="text-2xl font-bold mb-4">My own</h1>
       <div className="space-y-4">
         {filteredHabits.map((habit, index) => {
-          const yearlyProgress = habit.yearlyProgress.find(
-            (progress) => progress.year === appDate?.getFullYear()
-          );
-          if (!yearlyProgress) return null; // Skip if no yearly progress found
-          const completions = yearlyProgress.completions;
-
-          return (
-            <div key={index} className="p-4 rounded border">
-              <h2 className="text-xl">{habit.title}</h2>
-              <p>{habit.description}</p>
-              <p>
-                {completions[dayIndex]} / {habit.targetCount}{" "}
-                {habit.metric}
-              </p>
-              <Button
-                disabled={
-                  Number(completions[dayIndex]) >= habit.targetCount
-                }
-                variant="outline"
-                onClick={() => {
-                  const prevValue = completions[dayIndex];
-                  const newValue = Number(prevValue) + 1;
-                  if (newValue > habit.targetCount) return;
-                  const updatedHabit = (yearlyProgress.completions[
-                    dayIndex
-                  ] = newValue.toString());
-                  console.log(updatedHabit);
-                  setHabits(habits);
-                }}
-              >
-                +1
-              </Button>
-            </div>
-          );
+          return <HabitCard key={habit.id} habit={habit} />;
         })}
+        {/* //   const yearlyProgress = habit.yearlyProgress.find(
+        //     (progress) => progress.year === appDate?.getFullYear()
+        //   );
+        //   if (!yearlyProgress) return null; // Skip if no yearly progress found
+        //   const completions = yearlyProgress.completions;
+
+        //   return (
+        //     <div key={index} className="p-4 rounded border">
+        //       <h2 className="text-xl">{habit.title}</h2>
+        //       <p>{habit.description}</p>
+        //       <p>
+        //         {completions[dayIndex]} / {habit.targetCount}{" "}
+        //         {habit.metric}
+        //       </p>
+        //       <Button
+        //         disabled={
+        //           Number(completions[dayIndex]) >= habit.targetCount
+        //         }
+        //         variant="outline"
+        //         onClick={() => {
+        //           const prevValue = completions[dayIndex];
+        //           const newValue = Number(prevValue) + 1;
+        //           if (newValue > habit.targetCount) return;
+        //           const updatedHabit = (yearlyProgress.completions[
+        //             dayIndex
+        //           ] = newValue.toString());
+        //           console.log(updatedHabit);
+        //           setHabits(habits);
+        //         }}
+        //       >
+        //         +1
+        //       </Button>
+        //     </div>
+        //   );
+        // })} */}
       </div>
     </div>
   );

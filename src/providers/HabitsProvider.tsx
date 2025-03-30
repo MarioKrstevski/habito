@@ -1,5 +1,5 @@
 "use client";
-import { HabitYearlyProgress } from "@prisma/client";
+import { Habit, HabitYearlyProgress } from "@prisma/client";
 import { useEffect } from "react";
 import { useAppState } from "@/hooks/useAppState";
 import {
@@ -11,7 +11,7 @@ export function HabitsProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { setHabits, appDate } = useAppState();
+  const { setHabits, appDate, setTags } = useAppState();
   useEffect(() => {
     const fetchHabits = async () => {
       const habits = await fetch("/api/habits").then((res) =>
@@ -31,7 +31,12 @@ export function HabitsProvider({
           ),
         })
       );
+      const tags: string[] = Array.from(
+        new Set(habits.map((habit: Habit) => habit.tags).flat())
+      );
+
       setHabits(habitsParsed);
+      setTags(tags);
     };
     fetchHabits();
   }, [appDate?.getFullYear()]);

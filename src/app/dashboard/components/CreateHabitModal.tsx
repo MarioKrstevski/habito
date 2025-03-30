@@ -40,9 +40,11 @@ import { useUser } from "@clerk/nextjs";
 import HabitIconPicker from "./HabitIconPicker";
 import { Switch } from "@/components/ui/switch";
 import DaysOfWeekPicker from "./DaysOfWeekPicker";
+import TagsSelection from "./TagsSelection";
 
 export default function CreateHabitModal() {
   const { user } = useUser();
+  const { tags: tagsFromAppState } = useAppState();
   const {
     isCreateHabitModalOpen,
     habits,
@@ -63,10 +65,15 @@ export default function CreateHabitModal() {
   const [metric, setMetric] = useState("times");
   const [targetCount, setTargetCount] = useState(1);
   const [startDate, setStartDate] = useState<Date | null>(new Date());
+  const [tags, setTags] = useState<string[]>(() => {
+    if (tagsFromAppState) {
+      return tagsFromAppState;
+    }
+    return [];
+  });
 
   // tODO
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [tags, setTags] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -265,7 +272,7 @@ export default function CreateHabitModal() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="startDate">Start Date</Label>
-              <Popover open={isOpen} onOpenChange={setIsOpen}>
+              <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     id="startDate"
@@ -305,9 +312,10 @@ export default function CreateHabitModal() {
                 </PopoverContent>
               </Popover>
             </div>
+            <br />
             <div className="flex flex-col gap-2">
               <Label htmlFor="endDate">End Date</Label>
-              <Popover open={isOpen} onOpenChange={setIsOpen}>
+              <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     id="endDate"
@@ -342,10 +350,18 @@ export default function CreateHabitModal() {
                       date > new Date() ||
                       date < new Date("1900-01-01")
                     }
-                    //   initialFocus
                   />
                 </PopoverContent>
               </Popover>
+              {endDate && (
+                <Button
+                  variant="ghost"
+                  className="ml-2"
+                  onClick={() => setEndDate(null)}
+                >
+                  Remove End Date
+                </Button>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
@@ -386,6 +402,9 @@ export default function CreateHabitModal() {
               daysOfWeek={daysOfWeek}
               onChange={setDaysOfWeek}
             />
+          </div>
+          <div>
+            <TagsSelection tags={tags} onChange={setTags} />
           </div>
           <div className="flex justify-end mt-4">
             <Button

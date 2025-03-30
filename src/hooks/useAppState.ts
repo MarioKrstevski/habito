@@ -7,21 +7,25 @@ interface useAppStateStore {
   appDate: Date | null;
   isCreateHabitModalOpen: boolean;
   dayIndex: number;
+  tags: string[];
   habits: HabitWithParsedYearlyProgress[];
   setHabits: (habits: HabitWithParsedYearlyProgress[]) => void;
   setAppDate: (date: Date | null) => void;
   setDayIndex: (dayIndex: number) => void;
   setIsCreateHabitModalOpen: (isOpen: boolean) => void;
+  setTags: (tags: string[]) => void;
 }
 
 export const useAppState = create<useAppStateStore>((set) => ({
   appDate: new Date(),
+  tags: [],
   isCreateHabitModalOpen: false,
   dayIndex: getCachedDateIndex(
     new Date().getMonth(),
-    new Date().getDay()
+    new Date().getDate()
   ),
   habits: [],
+
   setAppDate: (date: Date | null) =>
     set({
       appDate: date,
@@ -32,4 +36,7 @@ export const useAppState = create<useAppStateStore>((set) => ({
     set({ habits }),
   setIsCreateHabitModalOpen: (isOpen: boolean) =>
     set({ isCreateHabitModalOpen: isOpen }),
+  setTags: (tags: string[]) => set({ tags }),
 }));
+
+console.log(useAppState.getState().appDate);
